@@ -1,0 +1,9 @@
+[package]
+name = "tcr_deploy"
+version = "0.1.0"
+authors = ["Kmoneal <kmacjoneal@gmail.com>"]
+
+[dependencies]
+web3="0.1.0"
+rustc-hex="1.0.0"
+serde_json="1.0"
