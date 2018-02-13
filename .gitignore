@@ -2,3 +2,4 @@
 /target/
 **/*.rs.bk
 /rust-web3/
+**/libs.txt
