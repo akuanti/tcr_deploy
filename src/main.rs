@@ -8,7 +8,6 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use web3::futures::Future;
 use web3::futures::future::ok;
@@ -33,30 +32,26 @@ use tcr_deploy::{compile, Library};
 fn compile_libraries(compiler: &compile::Solc) {
     println!("compiling in {}", compiler.root());
     println!("output dir: {}", compiler.output_dir());
-    // should output to tcr/<output>
-    // const TCR_PATH: &str = "tcr";
+
     let output_dir = format!("{}/{}", compiler.root(), compiler.output_dir());
 
     let mut abs_path: PathBuf = env::current_dir().unwrap();
     abs_path.extend(&["../tcr", "installed_contracts"]);
     let abs_path: PathBuf = abs_path.canonicalize().unwrap();
-    let allow_paths = vec!["--allow-paths", abs_path.as_os_str().to_str().unwrap()];
+    let abs_path: &str = abs_path.to_str().unwrap();
 
-    // binaries only for libraries
-    let output = Command::new("solc")
-        .current_dir(compiler.root())
-        .arg("--bin")
-        // TODO: add this to compiler
-        .args(&allow_paths)
-        .arg("-o")
-        .arg(output_dir)
-        // always overwrite initial library bytecode
-        .arg("--overwrite")
-        // sources
-        .arg("installed_contracts/dll/contracts/DLL.sol")
-        .arg("installed_contracts/attrstore/contracts/AttributeStore.sol")
+    let output = compiler.compile()
+        // binaries only for libraries
+        .bin()
+        .allow_path(abs_path)
+        .add_source("installed_contracts/dll/contracts/DLL.sol")
+        .add_source("installed_contracts/attrstore/contracts/AttributeStore.sol")
+        .output_dir(output_dir.as_str())
+        .overwrite()
+        .execute()
+        .expect("No command")
         .output()
-        .expect("failed to execute process");
+        .expect("Failed to compile libs");
 
     println!("command {:?}", output);
     println!("{}", String::from_utf8_lossy(&output.stderr));
@@ -121,75 +116,68 @@ where
     library_deploy.wait().unwrap();
 }
 
-// TODO: return Result
-// fn compile_contracts(contract_root: &str, lib_file: &Path, output_dir: &str) {
-fn compile_contracts<P>(compiler: &compile::Solc, lib_file_path: P)
+// compile and link dependent contracts
+// PLCRVoting -> EIP20, [DLL], [AttributeStore]
+// Parameterizer -> PLCRVoting, [EIP20]
+// Registry -> EIP20, Parameterizer, PLCRVoting
+fn compile_contracts<P>(compiler: &compile::Solc, lib_file_path: P) -> Result<(), &'static str>
 where
     P: AsRef<Path>,
 {
     println!("compiling contracts");
-    // compile and link dependent contracts
-    // PLCRVoting -> EIP20, [DLL], [AttributeStore]
-    // Parameterizer -> PLCRVoting, [EIP20]
-    // Registry -> EIP20, Parameterizer, PLCRVoting
 
-    let tcr_path = compiler.root();
+    let epm_dir = "installed_contracts";
+    let mut epm_dir_abs = env::current_dir().expect("Could not get current directory");
+    epm_dir_abs.extend(&[compiler.root(), epm_dir]);
+    let epm_dir_abs = epm_dir_abs
+        .canonicalize()
+        .expect("Could not canonicalize path");
 
-    let installed_path = "installed_contracts";
-    // println!("CONTRACT INSTALL PATH: {:?}", installed_path);
+    // output dir: <tcr>/<output>/
+    let output_dir = [
+        compiler.root(),
+        compiler.output_dir.expect("No output directory set"),
+    ].join("/");
 
-    let mut abs_path: PathBuf = env::current_dir().unwrap();
-    abs_path.extend(&[tcr_path, installed_path]);
-    let abs_path: PathBuf = abs_path.canonicalize().unwrap();
-    let allow_paths = vec!["--allow-paths", abs_path.as_os_str().to_str().unwrap()];
-    // println!("ALLOW {:?}", allow_paths);
+    let mut compile = compiler.compile();
+    compile
+        .bin()
+        .abi()
+        .libraries_file(lib_file_path.as_ref().to_str().unwrap())
+        .allow_path(epm_dir_abs.to_str().unwrap())
+        .output_dir(output_dir.as_str());
 
-    // paths to installed libraries
-    // <tcr_path>/installed_contracts/<package>/contracts
-    let lib_paths: Vec<String> = ["dll", "attrstore", "tokens"]
-        .iter()
-        .map(|package| format!("{}={}/{}/contracts", package, installed_path, package))
-        .collect();
-    // println!("LIBS {:?}", lib_paths);
+    // remap paths for EPM libs
+    for p in ["dll", "attrstore", "tokens"].iter() {
+        let _path = format!("{}/{}/contracts", epm_dir, p);
+        compile.add_mapping(p, _path.as_str());
+    }
 
     // input Solidity files
-    let sources: Vec<String> = ["PLCRVoting.sol", "Parameterizer.sol", "Registry.sol"]
-        .iter()
-        .map(|src| format!("contracts/{}", src))
-        .collect();
-    println!("SOURCES {:?}", &sources[..]);
+    for s in ["PLCRVoting.sol", "Parameterizer.sol", "Registry.sol"].iter() {
+        let src = format!("contracts/{}", s);
+        compile.add_source(src.as_str());
+    }
 
-    // output dir: <tcr>/<output\>
-    let output_dir: PathBuf = [compiler.root(), compiler.output_dir.unwrap()]
-        .iter()
-        .collect();
-    println!("OUTPUT: {:?}", output_dir);
-
-    let mut cmd = Command::new("solc");
-    cmd.current_dir(tcr_path)
-        .arg("--bin")
-        .arg("--abi")
-        .args(&allow_paths)
-        .args(&lib_paths)
-        .arg("--libraries")
-        .arg(lib_file_path.as_ref())
-        .arg("-o")
-        .arg(output_dir)
-        .args(&sources);
-
+    let cmd = compile.execute().expect("No command found");
     println!("{:?}", cmd);
 
     let output = cmd.output().expect("failed to execute process");
 
-    println!("status: {}", output.status);
-    println!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-    println!("stderr: {}", String::from_utf8_lossy(&output.stderr));
-
-    // TODO: ignore "refusing to overwrite"
-    // if "Refusing to overwrite" in stderr, count as ok
-    // if !output.status.success() {
-    //     panic!("Compliation failed");
-    // }
+    match output.status.code() {
+        Some(0) => Ok(()),
+        Some(1) => {
+            let _stderr = String::from_utf8_lossy(&output.stderr);
+            // if "Refusing to overwrite" in stderr, count as ok
+            if _stderr.contains("Refusing to overwrite") {
+                Ok(())
+            } else {
+                // println!("{}", _stderr);
+                Err("Something went wrong")
+            }
+        }
+        _ => Err("something went wrong"),
+    }
 }
 
 #[derive(Debug)]
@@ -210,6 +198,7 @@ struct Parameters {
 }
 
 fn main() {
+    // deploy_tcr --params <file> --tcr <dir>
     let (_eloop, http) = web3::transports::Http::new("http://localhost:8545").unwrap();
     let web3 = web3::Web3::new(http);
 
@@ -222,9 +211,10 @@ fn main() {
     println!("ROOT: {:?}", contract_root);
 
     // relative to tcr root
+    const TCR_DIR: &str = "../tcr";
     const BUILD_DIR: &str = "some_place";
 
-    let mut compiler = compile::Solc::new("../tcr");
+    let mut compiler = compile::Solc::new(TCR_DIR);
     // output_dir is relative to root
     compiler.output_dir = Some(BUILD_DIR);
 
@@ -244,8 +234,7 @@ fn main() {
 
     // compile and link contracts
     // TODO: only if the libraries have been deployed
-    // TODO: pass in compiler
-    compile_contracts(&compiler, &lib_file);
+    compile_contracts(&compiler, &lib_file).expect("Problem compiling contracts");
 
     // deploy contracts (in order)
     // EIP20
@@ -255,8 +244,7 @@ fn main() {
     println!("deploying contracts");
 
     // Token
-    let eip20_bytecode: Vec<u8> = compiler.load_bytecode("EIP20.bin"); //include_str!("../tcr/some_place/EIP20.bin").from_hex().unwrap();
-
+    let eip20_bytecode: Vec<u8> = compiler.load_bytecode("EIP20.bin");
     let eip20_contract = Contract::deploy(web3.eth(), &compiler.load_abi("EIP20.abi"))
         .unwrap()
         .confirmations(0)
