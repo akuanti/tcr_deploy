@@ -13,3 +13,4 @@ tiny-keccak = "1.4.0"
 
 [patch.crates-io]
 solc = { git = "https://github.com/akuanti/solc-rs" }
+web3 = { git = "https://github.com/akuanti/rust-web3", branch = "tcr_deploy" }
