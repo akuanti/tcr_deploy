@@ -1,4 +1,5 @@
 //! TCR functions
+extern crate tiny_keccak;
 extern crate web3;
 
 use std::env;
@@ -369,3 +370,66 @@ where
 }
 
 
+/// Makes application with the min deposit
+pub fn add_listing<T>(web3: &web3::Web3<T>, info: &RegistryInfo<T>, name: &str)
+    where T: Transport
+{
+    println!("Adding listing {}", name);
+
+    // set up
+    let accounts = web3.eth().accounts().wait().expect("Could not get accounts");
+    // TODO: read from file
+    let deposit = 10;
+    let confirmations = 0;
+
+    // approve registry to spend deposit
+    let token_contract = &info.token;
+    println!("Approving registry to spend {}", deposit);
+
+    let result = token_contract.call_with_confirmations(
+        "approve",
+        (info.registry.address(), deposit),
+        accounts[0],
+        Options::default(),
+        confirmations,
+    );
+    let receipt = result.wait().expect("Could not approve funds");
+
+    println!("receipt: {:?}", receipt);
+
+    // apply with domain
+    // TODO: get waiting period from contract
+    let mut sha3 = tiny_keccak::Keccak::new_sha3_256();
+    let data: Vec<u8> = From::from(name);
+    sha3.update(&data);
+
+    let mut res: [u8; 32] = [0; 32];
+    sha3.finalize(&mut res);
+
+    let result = info.registry.call_with_confirmations(
+        "apply",
+        (H256::from(res), deposit, name.to_owned()),
+        accounts[0],
+        Options::with(|opt| opt.gas = Some(1_000_000.into())),
+        confirmations,
+    );
+    let receipt = result.wait().expect("Could not submit application");
+    println!("receipt: {:?}", receipt);
+
+    // wait for apply period
+
+    // update status
+    let result = info.registry.call_with_confirmations(
+        "updateStatus",
+        (H256::from(res),),
+        accounts[0],
+        Options::default(),
+        confirmations,
+    );
+    let status = result.wait().expect("Could not update status");
+    println!("updateStatus: {:?}", status);
+
+    let result = info.registry.query("isWhitelisted", (H256::from(res)), None, Options::default(), None);
+    let added: bool = result.wait().expect("Problem checking whitelist");
+    println!("isWhitelisted: {:?}", added);
+}

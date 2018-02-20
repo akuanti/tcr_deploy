@@ -14,5 +14,6 @@ fn main() {
     let registry_contract = &registry_info.registry;
     println!("REGISTRY {:?}", registry_contract.address());
 
+    registry::add_listing(&web3, &registry_info, "abc.com");
 
 }
