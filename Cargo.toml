@@ -8,4 +8,8 @@ ethabi="5.0"
 web3="0.2.0"
 rustc-hex="1.0.0"
 serde_json="1.0"
+solc="0.1.0"
 tiny-keccak = "1.4.0"
+
+[patch.crates-io]
+solc = { git = "https://github.com/akuanti/solc-rs" }

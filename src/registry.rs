@@ -1,4 +1,5 @@
 //! TCR functions
+extern crate solc;
 extern crate tiny_keccak;
 extern crate web3;
 
@@ -16,7 +17,6 @@ use web3::Transport;
 
 use rustc_hex::FromHex;
 
-use compile;
 use Library;
 
 /// TCR parameters
@@ -48,7 +48,7 @@ pub struct RegistryInfo<T>
 }
 
 // TODO: return Result
-fn compile_libraries(compiler: &compile::Solc) {
+fn compile_libraries(compiler: &solc::Solc) {
     println!("compiling in {}", compiler.root());
     println!("output dir: {}", compiler.output_dir());
 
@@ -139,7 +139,7 @@ where
 // PLCRVoting -> EIP20, [DLL], [AttributeStore]
 // Parameterizer -> PLCRVoting, [EIP20]
 // Registry -> EIP20, Parameterizer, PLCRVoting
-fn compile_contracts<P>(compiler: &compile::Solc, lib_file_path: P) -> Result<(), &'static str>
+fn compile_contracts<P>(compiler: &solc::Solc, lib_file_path: P) -> Result<(), &'static str>
 where
     P: AsRef<Path>,
 {
@@ -224,7 +224,7 @@ where
     const TCR_DIR: &str = "../tcr";
     const BUILD_DIR: &str = "some_place";
 
-    let mut compiler = compile::Solc::new(TCR_DIR);
+    let mut compiler = solc::Solc::new(TCR_DIR);
     // output_dir is relative to root
     compiler.output_dir = Some(BUILD_DIR);
 

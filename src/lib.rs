@@ -16,7 +16,6 @@ use web3::Transport;
 use web3::types::*;
 
 // public interface
-pub mod compile;
 pub mod registry;
 
 // TODO: load information from Truffle JSON artifacts
