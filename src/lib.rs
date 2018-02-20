@@ -15,12 +15,14 @@ use web3::futures::future::{ok, FutureResult};
 use web3::Transport;
 use web3::types::*;
 
+// public interface
 pub mod compile;
+pub mod registry;
 
 // TODO: load information from Truffle JSON artifacts
 
 #[derive(Debug)]
-pub struct Library {
+struct Library {
     bytecode: Vec<u8>,
     address: Address,
     // eth: Eth<T>
