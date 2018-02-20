@@ -1,7 +1,7 @@
 [package]
 name = "tcr_deploy"
 version = "0.1.0"
-authors = ["Kmoneal <kmacjoneal@gmail.com>"]
+authors = ["Kmoneal <kmacjoneal@gmail.com>", "Akua Nti <akua.nti@consensys.net"]
 
 [dependencies]
 ethabi="5.0"
