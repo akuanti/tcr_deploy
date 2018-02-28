@@ -20,21 +20,24 @@ use rustc_hex::FromHex;
 use Library;
 
 /// TCR parameters
-#[derive(Debug)]
-struct Parameters {
-    min_deposit: U256,
-    apply_stage_length: U256,
-    commit_stage_length: U256,
-    reveal_stage_length: U256,
-    dispensation_percentage: U256,
-    vote_quorum: U256,
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Parameters {
+    min_deposit: u32,
+    apply_stage_length: u32,
+    commit_stage_length: u32,
+    reveal_stage_length: u32,
+    #[serde(rename = "dispensationPct")]
+    dispensation_percentage: u32,
+    vote_quorum: u32,
     // parameterizer
-    p_min_deposit: U256,
-    p_apply_stage_length: U256,
-    p_commit_stage_length: U256,
-    p_reveal_stage_length: U256,
-    p_dispensation_percentage: U256,
-    p_vote_quorum: U256,
+    p_min_deposit: u32,
+    p_apply_stage_length: u32,
+    p_commit_stage_length: u32,
+    p_reveal_stage_length: u32,
+    #[serde(rename = "pDispensationPct")]
+    p_dispensation_percentage: u32,
+    p_vote_quorum: u32,
 }
 
 /// TCR info
@@ -292,18 +295,18 @@ where
     let parameterizer_bytecode: Vec<u8> = compiler.load_bytecode("Parameterizer.bin");
     // TODO: read from file
     let config = Parameters {
-        min_deposit: 10.into(),
-        apply_stage_length: 0.into(),
-        commit_stage_length: 600.into(),
-        reveal_stage_length: 600.into(),
-        dispensation_percentage: 50.into(),
-        vote_quorum: 50.into(),
-        p_min_deposit: 100.into(),
-        p_apply_stage_length: 1200.into(),
-        p_commit_stage_length: 1200.into(),
-        p_reveal_stage_length: 1200.into(),
-        p_dispensation_percentage: 50.into(),
-        p_vote_quorum: 50.into(),
+        min_deposit: 10,
+        apply_stage_length: 0,
+        commit_stage_length: 600,
+        reveal_stage_length: 600,
+        dispensation_percentage: 50,
+        vote_quorum: 50,
+        p_min_deposit: 100,
+        p_apply_stage_length: 1200,
+        p_commit_stage_length: 1200,
+        p_reveal_stage_length: 1200,
+        p_dispensation_percentage: 50,
+        p_vote_quorum: 50,
     };
 
     let parameterizer_contract =
@@ -316,18 +319,18 @@ where
                 (
                     eip20_contract.address(),
                     plcr_contract.address(),
-                    config.min_deposit,
-                    config.p_min_deposit,
-                    config.apply_stage_length,
-                    config.p_apply_stage_length,
-                    config.commit_stage_length,
-                    config.p_commit_stage_length,
-                    config.reveal_stage_length,
-                    config.p_reveal_stage_length,
-                    config.dispensation_percentage,
-                    config.p_dispensation_percentage,
-                    config.vote_quorum,
-                    config.p_vote_quorum,
+                    U256::from(config.min_deposit),
+                    U256::from(config.p_min_deposit),
+                    U256::from(config.apply_stage_length),
+                    U256::from(config.p_apply_stage_length),
+                    U256::from(config.commit_stage_length),
+                    U256::from(config.p_commit_stage_length),
+                    U256::from(config.reveal_stage_length),
+                    U256::from(config.p_reveal_stage_length),
+                    U256::from(config.dispensation_percentage),
+                    U256::from(config.p_dispensation_percentage),
+                    U256::from(config.vote_quorum),
+                    U256::from(config.p_vote_quorum),
                 ),
                 my_account,
             )
