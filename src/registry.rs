@@ -258,21 +258,7 @@ where
 
     // Paraeterizer
     let parameterizer_bytecode: Vec<u8> = compiler.load_bytecode("Parameterizer.bin");
-    // TODO: read from file
-    let config = Parameters {
-        min_deposit: 10,
-        apply_stage_length: 0,
-        commit_stage_length: 600,
-        reveal_stage_length: 600,
-        dispensation_percentage: 50,
-        vote_quorum: 50,
-        p_min_deposit: 100,
-        p_apply_stage_length: 1200,
-        p_commit_stage_length: 1200,
-        p_reveal_stage_length: 1200,
-        p_dispensation_percentage: 50,
-        p_vote_quorum: 50,
-    };
+    let params = &config.params;
 
     let parameterizer_contract =
         Contract::deploy(web3.eth(), &compiler.load_abi("Parameterizer.abi"))
@@ -284,18 +270,18 @@ where
                 (
                     eip20_contract.address(),
                     plcr_contract.address(),
-                    U256::from(config.min_deposit),
-                    U256::from(config.p_min_deposit),
-                    U256::from(config.apply_stage_length),
-                    U256::from(config.p_apply_stage_length),
-                    U256::from(config.commit_stage_length),
-                    U256::from(config.p_commit_stage_length),
-                    U256::from(config.reveal_stage_length),
-                    U256::from(config.p_reveal_stage_length),
-                    U256::from(config.dispensation_percentage),
-                    U256::from(config.p_dispensation_percentage),
-                    U256::from(config.vote_quorum),
-                    U256::from(config.p_vote_quorum),
+                    U256::from(params.min_deposit),
+                    U256::from(params.p_min_deposit),
+                    U256::from(params.apply_stage_length),
+                    U256::from(params.p_apply_stage_length),
+                    U256::from(params.commit_stage_length),
+                    U256::from(params.p_commit_stage_length),
+                    U256::from(params.reveal_stage_length),
+                    U256::from(params.p_reveal_stage_length),
+                    U256::from(params.dispensation_percentage),
+                    U256::from(params.p_dispensation_percentage),
+                    U256::from(params.vote_quorum),
+                    U256::from(params.p_vote_quorum),
                 ),
                 my_account,
             )
