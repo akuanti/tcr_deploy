@@ -18,6 +18,7 @@ use web3::Transport;
 use rustc_hex::FromHex;
 
 use Library;
+use Config;
 
 /// TCR parameters
 #[derive(Debug, Deserialize)]
@@ -212,7 +213,7 @@ where
 //
 // TODO: pass in tcr dir, build dir
 // TODO: check network id?
-pub fn deploy<T>(web3: &web3::Web3<T>) -> RegistryInfo<T>
+pub fn deploy<T>(web3: &web3::Web3<T>, config: Config) -> RegistryInfo<T>
 where
     T: Transport,
 {
