@@ -518,8 +518,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "solc"
 version = "0.1.0"
-source = "git+https://github.com/akuanti/solc-rs#c623d21c8be07236efa2a22eab36b891aaeeec00"
+source = "git+https://github.com/akuanti/solc-rs#cb9637fc3caf3881a28a875b67fc8ab3d94192ce"
 dependencies = [
+ "ethereum-types 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -687,7 +688,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "web3"
 version = "0.2.0"
-source = "git+https://github.com/akuanti/rust-web3?branch=tcr_deploy#42a3297017fd5bd68eb85373d2078f57a763f61b"
+source = "git+https://github.com/akuanti/rust-web3?branch=tcr_deploy#037ce3f4e86fc0c03b5d5eca0b357ba05efb9b11"
 dependencies = [
  "arrayvec 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
