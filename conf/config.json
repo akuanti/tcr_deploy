@@ -14,5 +14,9 @@
     "pVoteQuorum": 50
   },
   "tcrDirectory": "../tcr",
-  "compilerBuildDirectory": "test_build"
+  "compilerBuildDirectory": "test_build",
+  "listings": [
+      "abc.com",
+      "fox.com"
+    ]
 }

@@ -19,7 +19,7 @@ use Config;
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Parameters {
-    min_deposit: u32,
+    pub(crate) min_deposit: u32,
     apply_stage_length: u32,
     commit_stage_length: u32,
     reveal_stage_length: u32,
@@ -176,9 +176,8 @@ fn compile_contracts(compiler: &solc::Solc) -> Result<(), &'static str> {
 // link/deploy Parameterizer
 // link/deploy Registry
 //
-// TODO: pass in tcr dir, build dir
 // TODO: check network id?
-pub fn deploy<T>(web3: &web3::Web3<T>, config: Config) -> RegistryInfo<T>
+pub fn deploy<T>(web3: &web3::Web3<T>, config: &Config) -> RegistryInfo<T>
 where
     T: Transport,
 {
@@ -221,12 +220,14 @@ where
     // Registry
     println!("deploying contracts");
 
+    let max_gas: U256 = config.gas_limit.unwrap_or(4_500_000).into();
+
     // Token
     let eip20_bytecode: Vec<u8> = compiler.load_bytecode("EIP20.bin");
     let eip20_contract = Contract::deploy(web3.eth(), &compiler.load_abi("EIP20.abi"))
         .unwrap()
         .confirmations(0)
-        .options(Options::with(|opt| opt.gas = Some(1_000_000.into())))
+        .options(Options::with(|opt| opt.gas = Some(max_gas)))
         .execute(
             eip20_bytecode,
             (
@@ -248,7 +249,7 @@ where
     let plcr_contract = Contract::deploy(web3.eth(), &compiler.load_abi("PLCRVoting.abi"))
         .unwrap()
         .confirmations(0)
-        .options(Options::with(|opt| opt.gas = Some(3_000_000.into())))
+        .options(Options::with(|opt| opt.gas = Some(max_gas)))
         .execute(plcr_bytecode, (eip20_contract.address(),), my_account)
         .expect("Correct parameters are passed to the constructor.")
         .wait()
@@ -264,7 +265,7 @@ where
         Contract::deploy(web3.eth(), &compiler.load_abi("Parameterizer.abi"))
             .unwrap()
             .confirmations(0)
-            .options(Options::with(|opt| opt.gas = Some(5_000_000.into())))
+            .options(Options::with(|opt| opt.gas = Some(max_gas)))
             .execute(
                 parameterizer_bytecode,
                 (
@@ -296,7 +297,7 @@ where
     let pending = Contract::deploy(web3.eth(), &compiler.load_abi("Registry.abi"))
         .unwrap()
         .confirmations(0)
-        .options(Options::with(|opt| opt.gas = Some(5_000_000.into())))
+        .options(Options::with(|opt| opt.gas = Some(max_gas)))
         .execute(
             registry_bytecode,
             (
@@ -322,8 +323,8 @@ where
     }
 }
 
-/// Makes application with the min deposit
-pub fn add_listing<T>(web3: &web3::Web3<T>, info: &RegistryInfo<T>, name: &str)
+/// Makes application with a given deposit
+pub fn add_listing<T>(web3: &web3::Web3<T>, info: &RegistryInfo<T>, name: &str, deposit: u32)
 where
     T: Transport,
 {
@@ -335,8 +336,7 @@ where
         .wait()
         .expect("Could not get accounts");
 
-    // TODO: read from file
-    let deposit = 10;
+    let deposit = U256::from(deposit);
     let confirmations = 0;
 
     // approve registry to spend deposit

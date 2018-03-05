@@ -15,12 +15,15 @@ fn main() {
             println!("CONFIG: {:#?}", config);
 
             // TODO: optionally pass in existing registry contract address
-            let mut registry_info = registry::deploy(&web3, config);
+            let mut registry_info = registry::deploy(&web3, &config);
             let registry_contract = &registry_info.registry;
             println!("REGISTRY {:?}", registry_contract.address());
 
             println!("Adding listings");
-            registry::add_listing(&web3, &registry_info, "abc.com");
+            let deposit = config.deposit();
+            for listing in config.listings() {
+                registry::add_listing(&web3, &registry_info, listing, deposit);
+            }
         }
         Err(e) => println!("Problem loading config {:?}", e.description()),
     }

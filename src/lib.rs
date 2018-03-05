@@ -41,6 +41,14 @@ pub struct Config {
     /// Default: "build"
     #[serde(rename = "compilerBuildDirectory")]
     compiler_build_dir: Option<String>,
+    /// The gas limit to use for deployment
+    gas_limit: Option<u32>,
+    /// The domains to add
+    listings: Vec<String>,
+    /// The deposit amount to use for each listing
+    /// Must be at least the min_deposit for the parameterizer
+    /// Default: min_deposit
+    listing_deposit: Option<u32>,
 }
 
 impl Config {
@@ -53,6 +61,9 @@ impl Config {
                 Some(s) => Some(s.to_string()),
                 None => None,
             },
+            gas_limit: None,
+            listings: Vec::<String>::new(),
+            listing_deposit: None,
         }
     }
 
@@ -69,7 +80,7 @@ impl Config {
             .map_err(|_e: serde_json::Error| io::Error::new(io::ErrorKind::Other, _e))
     }
 
-    /// Set the output directory for the compiler
+    /// Get the output directory for the compiler
     pub fn compiler_build_dir(&self) -> &str {
         match self.compiler_build_dir {
             None => "build",
@@ -77,10 +88,21 @@ impl Config {
         }
     }
 
-    /// Set the directory where the TCR code is stored
+    /// Get the directory where the TCR code is stored
     pub fn tcr_dir(&self) -> &str {
         self.tcr_dir.as_str()
     }
+
+    /// Get the listings to add
+    pub fn listings(&self) -> Vec<&str> {
+        self.listings.iter().map(|x| x.as_str()).collect()
+    }
+
+    /// Get the deposit. Default: `min_deposit`
+    pub fn deposit(&self) -> u32 {
+        self.listing_deposit.unwrap_or(self.params.min_deposit)
+    }
+
 }
 
 #[derive(Debug)]
@@ -202,10 +224,15 @@ mod test {
                 "pVoteQuorum": 50
             },
             "tcrDirectory": "../tcr",
-            "solcOutputDir": "some_place"
+            "solcOutputDir": "some_place",
+            "gasLimit": 4500000,
+            "listingDeposit": 10,
+            "listings": [
+                "abc.com"
+            ]
         }"#;
 
-        let config: Config = serde_json::from_str(data).expect("Could not parse config");
+        let _config: Config = serde_json::from_str(data).expect("Could not parse config");
     }
 
     #[test]
@@ -219,12 +246,12 @@ mod test {
     #[test]
     fn should_construct_config_with_default_output_dir() {
         let params = serde_json::from_str(EXAMPLE_PARAMS).expect("Could not parse params");
-        let config = Config::new(params, "../tcr", None);
+        Config::new(params, "../tcr", None);
     }
 
     #[test]
     #[should_panic]
     fn should_fail_with_missing_file() {
-        let config = Config::load_json("non-existent-file.json").expect("Config file not found");
+        Config::load_json("non-existent-file.json").expect("Config file not found");
     }
 }

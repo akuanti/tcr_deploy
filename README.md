@@ -7,16 +7,21 @@ To just deploy a TCR, adjust the params in `conf/config.json`, then run the main
 cargo run
 ```
 
-You can also import it as a library and pass in the path to your configuration file to `deploy()`.
+You can also import it as a library and pass in the lpath to your configuration file to `deploy()`.
 
 ## Requirements
-You must have a Solidity compiler installed and on your `PATH`.
+You must have a Solidity compiler installed and on your `PATH`. You must also have an Ethereum node to connect to.
 
 ## Configuration
-Specify the parameters for the TCR's parameterizer, the directory with the TCR code, and the directory to store the compiled files.
+Specify the parameters for the TCR's parameterizer, and compile/deployment options.
+
+the directory with the TCR code, and the directory to store the compiled files.
+
+All fields are required except `gasLimit` and `listingDeposit`.
 
 ```json
 {
+  // parameterizer
   "params": {
     "minDeposit": 10,
     "pMinDeposit": 100,
@@ -31,7 +36,19 @@ Specify the parameters for the TCR's parameterizer, the directory with the TCR c
     "voteQuorum": 50,
     "pVoteQuorum": 50
   },
+  // the directory with the TCR code
   "tcrDirectory": "../tcr",
-  "compilerBuildDirectory": "test_build"
+  // the directory to store the compiled files
+  "compilerBuildDirectory": "test_build",
+  // OPTIONAL: gas limit to use for deployments
+  "gasLimit": 3000000,
+  // OPTIONAL: deposit to use for adding listings
+  "listingDeposit": 20,
+  // listings to add
+  "listings": [
+      "abc.com",
+      "def.com"
+  ]
 }
 ```
+
