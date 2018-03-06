@@ -52,16 +52,15 @@ fn compile_libraries(compiler: &solc::Solc) {
     println!("compiling in {}", compiler.root());
     println!("output dir: {}", compiler.output_dir());
 
-    let mut abs_path: PathBuf = env::current_dir().unwrap();
-    abs_path.extend(&["../tcr", "installed_contracts"]);
-    let abs_path: PathBuf = abs_path.canonicalize().unwrap();
-    let abs_path: &str = abs_path.to_str().unwrap();
+    // get absolute path to <tcr>/installed_contracts
+    let mut allowed = PathBuf::from(compiler.root());
+    allowed.push("installed_contracts");
 
     let mut compile = compiler.compile();
     compile
         // binaries only for libraries
         .bin()
-        .allow_path(abs_path)
+        .allow_path(allowed)
         .add_source("installed_contracts/dll/contracts/DLL.sol")
         .add_source("installed_contracts/attrstore/contracts/AttributeStore.sol")
         .overwrite();
