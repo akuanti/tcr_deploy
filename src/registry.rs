@@ -304,6 +304,7 @@ where
                 eip20_contract.address(),
                 plcr_contract.address(),
                 parameterizer_contract.address(),
+                String::from("awesome test registry"),
             ),
             my_account,
         )
